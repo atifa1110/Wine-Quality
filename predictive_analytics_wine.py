@@ -12,6 +12,7 @@ Original file is located at
 - **ID Dicoding:** atifafiorenza24
 
 ## Import Library
+We need to import some library that will be used in data preprocessing, data manipulation, and modeling.
 """
 
 import pandas as pd
@@ -22,23 +23,24 @@ import math
 import itertools
 import joblib
 
-from imblearn.over_sampling import SMOTE
 from scipy.stats.mstats import winsorize
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.model_selection import RandomizedSearchCV,GridSearchCV
+from scipy.stats import randint
 from sklearn.model_selection import train_test_split
-
 from sklearn.preprocessing import RobustScaler
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from imblearn.over_sampling import SMOTE
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
-from xgboost import XGBClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
-from sklearn.model_selection import RandomizedSearchCV
-from scipy.stats import randint
+"""## Download Dataset
+Download the wine dataset. The dataset is from UCI Machine Learning and can be downloaded at Kaggle
 
-"""## Download Dataset"""
+https://www.kaggle.com/datasets/yasserh/wine-quality-dataset
+"""
 
 from google.colab import files
 files.upload()  # Upload file kaggle.json dari lokal
@@ -58,7 +60,9 @@ files.upload()  # Upload file kaggle.json dari lokal
 # Mengekstrak file dataset
 !unzip wine-quality-dataset.zip -d wine
 
-"""Load Dataset"""
+"""## Load Dataset
+Load and read wine dataset from folder wine
+"""
 
 dataset = 'wine/WineQT.csv'
 
@@ -66,103 +70,186 @@ dataset = 'wine/WineQT.csv'
 df = pd.read_csv(dataset)
 df.head()
 
-df.shape
+"""## Data Understanding
+First we want to find basic information from the dataset, like shape, data type, general stats, null values, and duplicate data. Than we will doing some EDA.
+"""
 
-"""## Dataset Preprocessing"""
+df.shape
 
 df.info()
 
-"""> Cek null"""
-
-# Menampilkan jumlah missing value per kolom
-missing_values = df.isnull().sum()
-
-# Filter hanya kolom dengan missing value > 0
-missing_values = missing_values[missing_values > 0]
-
-print(missing_values)
-
-"""> Cek duplicats"""
-
-df[df.duplicated()]
-
 df.describe()
 
-num_cols = df.select_dtypes(include=['int64', 'float64']).columns
+df.isna().sum()
 
-print("Numerik :", num_cols)
+df.duplicated().sum()
 
-"""## Distribusi tiap fitur
+num_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
-> Numerik
+"""## Data Visualization & EDA
+uses univariate and multivariate visualizations to understand data distribution, detect outliers, and reveal relationships between features before modeling.
+
+### Univariate Analysis
+Univariate analysis is focusing on one variable at a time. The main goal is to describe, summarize, and find patterns in the data. At this stage, the data will be shown using a **histogram** to visualize the distribution and a **boxplot** to identify potential outliers and understand the spread of the data.
 """
 
-num_cols1= ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar']
-fig, axes = plt.subplots(2, 2, figsize=(18, 10))
-axes = axes.flatten()
-
-for i, col in enumerate(num_cols1):
-    sns.boxplot(y=df[col], ax=axes[i], color='skyblue')
-    axes[i].set_title(f'Boxplot {col}')
-    axes[i].set_ylabel(col)
-
-plt.tight_layout()
-plt.show()
-
-num_cols2= ['chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density',]
-fig, axes = plt.subplots(2, 2, figsize=(18, 10))
-axes = axes.flatten()
-
-for i, col in enumerate(num_cols2):
-    sns.boxplot(y=df[col], ax=axes[i], color='skyblue')
-    axes[i].set_title(f'Boxplot {col}')
-    axes[i].set_ylabel(col)
-
-plt.tight_layout()
-plt.show()
-
-num_cols3= ['pH', 'sulphates', 'alcohol', 'quality']
-fig, axes = plt.subplots(2, 2, figsize=(18, 10))
-axes = axes.flatten()
-
-for i, col in enumerate(num_cols3):
-    sns.boxplot(y=df[col], ax=axes[i], color='skyblue')
-    axes[i].set_title(f'Boxplot {col}')
-    axes[i].set_ylabel(col)
-
-plt.tight_layout()
-plt.show()
-
-# Bikin grid 7x2
 fig, axes = plt.subplots(7, 2, figsize=(18, 14))  # ukuran lebih besar
 axes = axes.flatten()  # Supaya mudah di-loop
 
 for i, col in enumerate(num_cols):
     sns.histplot(df[col], kde=True, ax=axes[i], color='skyblue')
-    axes[i].set_title(f'Distribusi {col}')
+    axes[i].set_title(f'Distribution of {col}')
     axes[i].set_xlabel(col)
-    axes[i].set_ylabel('Frekuensi')
+    axes[i].set_ylabel('Count')
+
+# Hapus subplot yang tidak terpakai
+for j in range(len(num_cols), len(axes)):
+    fig.delaxes(axes[j])
 
 plt.tight_layout()
+plt.savefig('univariate_histogram.png', dpi=300, bbox_inches='tight')
 plt.show()
 
-"""### Deteksi Perilaku Outliner"""
+"""Berdasarkan hasil histogram diatas :
+- Banyak fitur miring ke kanan (skewed): Fitur seperti **residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, dan alcoho**l memiliki ekor panjang ke kanan. Ini menunjukkan **ada beberapa nilai yang sangat tinggi (outlier)**. Dalam plot KDE, kurvanya akan terlihat memanjang ke kanan.
+- Beberapa fitur normal: Fitur volatile acidity, density, dan pH memiliki sebaran yang lebih simetris, mirip kurva lonceng. Plot KDE untuk fitur ini akan menyerupai bentuk lonceng.
+- Fitur kategorikal: Fitur quality memiliki nilai yang terpusat di 5, 6, dan 7. Untuk fitur seperti ini, histogram lebih cocok daripada KDE.
+- Identitas unik: Fitur Id bukan data yang berguna untuk analisis karena setiap nilainya unik.
+"""
 
-# Fungsi untuk menghitung dan menampilkan data outlier
-def lihat_outlier(kolom_data):
-    q1 = kolom_data.quantile(0.25)
-    q3 = kolom_data.quantile(0.75)
-    iqr = q3 - q1
+# Tentukan layout grid otomatis
+n_cols = 3  # jumlah plot per baris
+n_rows = math.ceil(len(num_cols) / n_cols)
 
-    batas_bawah = q1 - 1.5 * iqr
-    batas_atas = q3 + 1.5 * iqr
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(6*n_cols, 5*n_rows))
+axes = axes.flatten()  # flatten supaya mudah di-loop
 
-    outliers = kolom_data[(kolom_data < batas_bawah) | (kolom_data > batas_atas)]
-    return outliers  # kembalikan nilai-nilai outlier, bukan jumlahnya
+for i, col in enumerate(num_cols):
+    sns.boxplot(y=df[col], ax=axes[i], color='skyblue')
+    axes[i].set_title(f'Boxplot {col}')
+    axes[i].set_ylabel(col)
 
-# Tampilkan outlier untuk kolom 'alcohol'
-outlier_values = lihat_outlier(df['residual sugar'])
-print("Nilai outlier:", outlier_values)
+# Hapus subplot kosong jika ada
+for j in range(len(num_cols), len(axes)):
+    fig.delaxes(axes[j])
+
+plt.tight_layout()
+plt.savefig('univariate_boxplot.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+"""Dari hasil boxplot, seluruh fitur memiliki outlier yang terlihat dari titik-titik di luar whisker. Beberapa fitur seperti **residual sugar, chlorides, free sulfur dioxide, dan total sulfur dioxide** memiliki jumlah outlier yang banyak, sedangkan fitur seperti **alcohol, sulphates, fixed acidity, volatile acidity, density, serta citric acid, pH, dan quality** memiliki outlier lebih sedikit. Hal ini perlu dipertimbangkan saat preprocessing untuk mengurangi dampak negatif outlier terhadap model.
+
+### Multivariate Analysis
+Multivariate analysis examines the relationships between three or more variables simultaneously. At this stage, the data will be shown using a **heatmap** to visualize the correlation matrix and a **scatterplot** to show the distribution of multiple features with respect to the target variable quality.
+"""
+
+# Select only numeric columns for correlation
+numeric_df = df.select_dtypes(include=['int64', 'float64']).drop(columns=['Id'])
+
+# Compute correlation matrix
+corr_matrix = numeric_df.corr()
+
+# Plot heatmap
+plt.figure(figsize=(10, 8))
+sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', linewidths=0.5, square=True, cbar_kws={"shrink": 0.8})
+plt.title("Correlation Matrix of Numeric Features", fontsize=14)
+plt.xticks(rotation=45, ha='right')
+plt.yticks(rotation=0)
+plt.tight_layout()
+plt.savefig('multivariate_matrix.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+"""Dari hasil heatmap diatas ditemukan ada beberapa fitur yang memiliki korelasi yang cukup tinggi > 0.60 :
+1. fixed acidity ↔ citric acid → **0.67**
+2. fixed acidity ↔ density → **0.68**
+3. free sulfur dioxide ↔ total sulfur dioxide → **0.66**
+
+Cek korelasi ke target (quality) dan lihat fitur mana di setiap pasangan yang punya korelasi absolut lebih besar dengan target → itu yang dipertahankan.
+
+1. fixed acidity → 0.12
+2. citric acid → 0.24 ✅ (lebih kuat ke target)
+density → -0.18
+4. free sulfur dioxide → -0.06
+5. total sulfur dioxide → -0.18 ✅ (lebih kuat ke target, walau negatif)
+
+**Rekomendasi awal (berdasarkan korelasi ke target saja)**
+
+**fixed acidity ↔ citric acid** →
+- Dari segi ilmu oenologi (ilmu wine), citric acid
+sering lebih berpengaruh ke kualitas persepsi rasa karena memberi freshness dan aroma citrus yang positif.
+- Fixed acidity memang penting, tapi terlalu tinggi bisa membuat wine terlalu asam dan tidak enak.
+- Korelasi ke quality (data kamu sebelum winsor): citric acid (0.24) > fixed acidity (0.12).
+- **Rekomendasi: Pilih citric acid.**
+
+
+**fixed acidity ↔ density** →
+- Density banyak dipengaruhi gula & alkohol.
+- Dalam penilaian kualitas, alkohol dan gula berperan besar pada body dan balance, jadi density bisa jadi indikator yang baik.
+- Korelasi ke quality: density (-0.18) sedikit lebih besar absolutnya daripada fixed acidity (0.12), tapi negatif → artinya density tinggi sering muncul di wine yang kualitasnya lebih rendah (misalnya wine manis dengan gula sisa tinggi).
+- **Rekomendasi: Pilih density**
+
+**free sulfur dioxide ↔ total sulfur dioxide** →
+- SO₂ memengaruhi stabilitas dan umur simpan, tapi kadar yang terlalu tinggi bisa merusak aroma & rasa.
+- Free SO₂ lebih berpengaruh langsung terhadap rasa dan aroma saat ini dibanding total SO₂.
+- Korelasi ke quality: total SO₂ (-0.18) > free SO₂ (-0.06) secara absolut, tapi arah negatif menunjukkan kadar tinggi sering menurunkan kualitas.
+- **Rekomendasi: Pilih total sulfur dioxide**
+"""
+
+# Asumsi target = 'quality'
+target = 'quality'
+
+# Buat figure grid
+num_cols = numeric_df.columns.drop(target)  # semua kolom numeric kecuali target
+n_cols = 3  # jumlah kolom per row
+n_rows = (len(num_cols) + n_cols - 1) // n_cols
+
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols*5, n_rows*4))
+axes = axes.flatten()
+
+for i, col in enumerate(num_cols):
+    sns.scatterplot(x=numeric_df[target], y=numeric_df[col], ax=axes[i], color='skyblue')
+    axes[i].set_title(f'{col} vs {target}')
+    axes[i].set_xlabel(target)
+    axes[i].set_ylabel(col)
+
+# Hapus axes yang kosong kalau ada
+for j in range(i+1, len(axes)):
+    fig.delaxes(axes[j])
+
+plt.tight_layout()
+plt.savefig('multivariate_scatterplot.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+"""Berdasarkan grafik scatter plot yang Anda berikan, berikut adalah pola yang terlihat dari hubungan antara setiap fitur dengan quality:
+
+**Hubungan Positif (Semakin tinggi fitur, semakin tinggi quality)**
+- **alcohol vs quality**:  Terlihat tren positif yang cukup jelas. Titik-titik data cenderung naik ke kanan, menunjukkan bahwa anggur dengan kadar alcohol yang lebih tinggi cenderung memiliki nilai quality yang lebih tinggi.
+
+- **citric acid vs quality**:  Ada tren positif, meski tidak sekuat alcohol. Ketika kadar citric acid meningkat, quality juga cenderung meningkat, menunjukkan kontribusi positif terhadap rasa.
+
+- **sulphates vs quality**:  Terlihat adanya tren positif. Peningkatan kadar sulphates seringkali berhubungan dengan nilai quality yang lebih tinggi.
+
+**Hubungan Negatif (Semakin tinggi fitur, semakin rendah quality)**
+- **volatile acidity vs quality**: Terdapat tren negatif yang cukup jelas. Semakin tinggi volatile acidity, semakin rendah nilai quality anggur. Ini menunjukkan bahwa keasaman yang mudah menguap tinggi tidak diinginkan untuk kualitas anggur yang baik.
+- **density vs quality**:  Ada tren negatif, meskipun hubungannya tidak terlalu kuat. Peningkatan density cenderung berhubungan dengan sedikit penurunan quality.
+
+**Hubungan Tidak Jelas (Korelasi lemah)**
+- Untuk fitur-fitur seperti fixed acidity, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, dan pH, sebaran titik-titik datanya tampak acak dan tidak membentuk pola yang jelas. Ini menunjukkan bahwa korelasi antara fitur-fitur ini dengan quality sangat lemah atau hampir tidak ada.
+
+## Dataset Preprocessing
+After doing some analysis, we will do data preparation like removing null values, duplicates, and outliers. We also will normalize the feature to make them have equall weights for the ML models.
+"""
+
+clean_df = df.copy()
+
+# Menghitung jumlah nilai kosong di setiap kolom
+missing_values = clean_df.isna().sum()
+print(missing_values[missing_values > 0])
+
+clean_df = clean_df.drop_duplicates()
+clean_df.duplicated().sum()
+
+"""After cleaning data, we will removing outlier from some of the important features. This is because outliers can make bias for the model. We use **winsorize** to reduce the influence of extreme values and optimize the model's performance."""
 
 # Fungsi untuk menghitung dan menampilkan data outlier
 def ringkasan_outlier(df, kolom_list):
@@ -198,15 +285,12 @@ def ringkasan_outlier(df, kolom_list):
     return pd.DataFrame(summary)
 
 # Misal kolom numerik di dataset
-numerik_cols = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar',
-       'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density',
-       'pH', 'sulphates', 'alcohol', 'quality']
+numeric_df = clean_df.select_dtypes(include=['int64', 'float64']).drop(columns=['Id'])
 
-tabel_outlier = ringkasan_outlier(df, numerik_cols)
+tabel_outlier = ringkasan_outlier(clean_df, numeric_df)
 print(tabel_outlier)
 
-# Copy df supaya df asli aman
-clean_df = df.copy()
+"""As you can see, the outliers in the extreme category are volatile acidity, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, and sulphates. We need to treat these outliers using winsorization."""
 
 # Daftar kolom ekstrem
 ekstrem_cols = ['volatile acidity', 'residual sugar', 'chlorides',
@@ -227,216 +311,166 @@ for col in ekstrem_cols:
     prop_upper = sum(data > upper_limit) / n
     prop_lower = sum(data < lower_limit) / n
 
-    # Simpan di kolom baru *_winsor
-    clean_df[col + '_winsor'] = winsorize(data, limits=(prop_lower, prop_upper))
+    # Simpan kembali ke kolom aslinya
+    clean_df[col] = winsorize(data, limits=(prop_lower, prop_upper))
 
-# Hapus kolom ekstrem aslinya
-clean_df.drop(columns=ekstrem_cols, inplace=True)
+clean_df.shape
+
+"""Next, we also need to convert the target values from 10 categories into 3 categories, because we want to classify whether the wine is having a low , medium, or high qualty"""
+
+clean_df['quality'].value_counts()
+
+clean_df["quality"] = pd.cut(clean_df["quality"], bins=[0, 4, 6, 10], labels=["low", "medium", "high"])
+
+clean_df['quality'].value_counts()
+
+# encode the target values, use 0 for bad, 1 for medium, and 2 for good
+clean_df["quality"] = clean_df["quality"].map({"low": 0, "medium": 1,"high":2})
 
 clean_df.head()
 
-"""## Korelasi antar fitur
-Gunakan heatmap korelasi untuk melihat hubungan antar variabel
+"""Drop Column Id because it can't use for modelling"""
 
-### Sebelum Winsorizing
-"""
+# Drop kolom 'id' dari dataframe
+clean_df = clean_df.drop('Id', axis=1)
 
-# Select only numeric columns for correlation
-numeric_df = df.select_dtypes(include=['int64', 'float64']).drop(columns=['Id'])
+# Cek hasilnya
+clean_df.head()
 
-# Compute correlation matrix
-corr_matrix = numeric_df.corr()
-
-# Plot heatmap
-plt.figure(figsize=(10, 8))
-sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', linewidths=0.5, square=True, cbar_kws={"shrink": 0.8})
-plt.title("Correlation Matrix of Numeric Features", fontsize=14)
-plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
-plt.tight_layout()
-plt.show()
-
-"""### Setelah Winsorizing"""
-
-# Select only numeric columns for correlation
-numeric_clean_df = clean_df.select_dtypes(include=['int64', 'float64']).drop(columns=['Id'])
-
-# Compute correlation matrix
-corr_matrix = numeric_clean_df.corr()
-
-# Plot heatmap
-plt.figure(figsize=(10, 8))
-sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', linewidths=0.5, square=True, cbar_kws={"shrink": 0.8})
-plt.title("Correlation Matrix of Numeric Features", fontsize=14)
-plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
-plt.tight_layout()
-plt.show()
-
-"""## Perbandingan fitur terhadap target"""
-
-# Daftar fitur numerik yang akan diplot
-num_features = ['alcohol', 'volatile acidity_winsor', 'sulphates_winsor', 'citric acid']
-
-# Menyiapkan plot
-plt.figure(figsize=(15, 10))
-
-# Membuat subplot untuk setiap fitur
-for i, feature in enumerate(num_features):
-    plt.subplot(2, 2, i + 1)
-    sns.boxplot(x='quality', y=feature, data=clean_df)
-    plt.title(f'Distribusi {feature.replace("_", " ").title()} per Quality', fontsize=12)
-    plt.xlabel('Quality', fontsize=10)
-    plt.ylabel(feature.replace("_", " ").title(), fontsize=10)
-    plt.grid(True, linestyle='--', alpha=0.6)
-
-plt.tight_layout()
-plt.show()
-
-"""## Simpan Clean Data"""
-
-label_df = clean_df.copy()
-
-def quality_group(q):
-    if q <= 5:
-        return 'low'
-    else:
-        return 'high'
-
-label_df['quality_label'] = label_df['quality'].apply(quality_group)
-
-label_df['quality_label'].value_counts()
-
-label_df = label_df.drop(['Id','quality','free sulfur dioxide_winsor'], axis=1)
-label_df.head()
-
-"""## Pembagian data train"""
-
-numeric_df = label_df.select_dtypes(include=['int64', 'float64']).columns
-category_df = label_df.select_dtypes(include=['object']).columns
-
-print(numeric_df.to_list())
-print(category_df.to_list())
-
-"""## Encoding"""
-
-from sklearn.preprocessing import LabelEncoder
-
-le = LabelEncoder()
-label_df['quality_label'] = le.fit_transform(label_df['quality_label'])
-label_df.head()
+"""The features are already cleaned, now we need to split for training and testing. Then we need transform it using robust scaler to make the data have equal weight, so it can increase the performance and reduce the bias of the ML models."""
 
 # Misal clean_df masih punya kolom 'quality'
-X = label_df.drop('quality_label', axis=1)  # semua kolom kecuali 'quality'
-y = label_df['quality_label']               # kolom target
+X = clean_df.drop(['quality'], axis=1)
+y = clean_df['quality']
 
+print(X.columns)
 print(y.value_counts())
 
+"""Split data into 80 train 20 test"""
+
+# Split data into 80/20
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
+"""Apply SMOTE on the training set only to address class imbalance in the target variable"""
+
+# SMOTE hanya di training set
 smote = SMOTE(random_state=42)
-X_res, y_res = smote.fit_resample(X_train, y_train)
+X_resample, y_resample = smote.fit_resample(X_train, y_train)
+print("Distribusi asli:")
 print(y.value_counts())
-print(y_res.value_counts())
+print("\nDistribusi setelah SMOTE:")
+print(y_resample.value_counts())
 
-"""## Scalling data"""
+"""Scale features using RobustScaler to reduce the impact of outliers"""
 
+# Scaling
 scaler = RobustScaler()
-
-# Fit scaler hanya di training set
-X_train_res_scaled = scaler.fit_transform(X_res)
-
-# Transform test set dengan scaler yang sama
+X_train_scaled = scaler.fit_transform(X_resample)
 X_test_scaled = scaler.transform(X_test)
 
-"""## Modelling"""
+"""## Modelling
+Because the data processing is already done, next we will train a model to do the classification. We will use 4 models, KNN, SVM, XGBoost and Random Forest. Those model are choosen because it some of the most common model used for classification.
+"""
 
-from sklearn.linear_model import LogisticRegression
+# Model
 models = {
-    "Logistic Regression" : LogisticRegression(max_iter=1000),
-    "Random Forest": RandomForestClassifier(random_state=42,class_weight='balanced'),
+    "Random Forest": RandomForestClassifier(random_state=42, n_estimators=100),
     "XGBoost": XGBClassifier(eval_metric='mlogloss', random_state=42),
-    "SVM": SVC(random_state=42),
-    "KNN": KNeighborsClassifier(),
+    "SVM": SVC(C=1.0, kernel="rbf", gamma="scale"),
+    "KNN": KNeighborsClassifier(n_neighbors=5)
 }
 
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+label_map = {0: 'Low', 1: 'Medium', 2: 'High'}
+accuracy_scores = {}
 
-def evaluate_model(model, X_train, y_train, X_test, y_test):
+# Fungsi evaluasi
+def evaluate_model(model, name, X_train, y_train, X_test, y_test):
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     score = accuracy_score(y_test, y_pred)
+    accuracy_scores[name] = score
     print(f"Score: {score:.4f}")
-    print(classification_report(y_test, y_pred))
+    print(classification_report(y_test, y_pred,target_names=label_map.values()))
     print(confusion_matrix(y_test, y_pred))
 
+    # Confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+    plt.figure(figsize=(6,5))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix')
+    plt.show()
+
+# Loop evaluasi
 for name, model in models.items():
     print(f"===== {name} =====")
-    if name in ["SVM", "KNN", "Logistic Regression"]:
-        evaluate_model(model, X_train_res_scaled, y_res, X_test_scaled, y_test)
-    else:
-        evaluate_model(model, X_res, y_res, X_test, y_test)
+    evaluate_model(model, name, X_train_scaled, y_resample, X_test_scaled, y_test)
     print("\n")
 
-"""## Hypertuning"""
+"""## Evaluation"""
 
-# Model awal
-rf = RandomForestClassifier(random_state=42, class_weight='balanced')
+# Data
+models_names = list(accuracy_scores.keys())
+accuracy_percent = [v * 100 for v in accuracy_scores.values()]
 
-# Range parameter yang mau diuji
-param_dist = {
-    'n_estimators': randint(100, 500),         # jumlah pohon
-    'max_depth': [None, 5, 10, 20, 30],       # kedalaman pohon
-    'min_samples_split': randint(2, 10),      # min sampel utk split
-    'min_samples_leaf': randint(1, 5),        # min sampel di daun
-    'max_features': ['sqrt', 'log2', None]    # fitur maksimum tiap split
-}
+# Custom colors: dark purple, dark blue, green, yellow
+custom_colors = ['#1A2A80', '#3B38A0', '#7A85C1', '#B2B0E8']
 
-# Randomized Search
-random_search = RandomizedSearchCV(
-    rf,
-    param_distributions=param_dist,
-    n_iter=50,                  # jumlah kombinasi coba
-    cv=5,                       # 5-fold cross validation
-    scoring='accuracy',         # metrik evaluasi
-    random_state=42,
-    n_jobs=-1,                  # pakai semua core CPU
-    verbose=2
-)
+plt.figure(figsize=(10, 6))
+bars = plt.bar(models_names, accuracy_percent, color=custom_colors[:len(models_names)])
 
-# Fit ke data training yang sudah SMOTE + scaling
-random_search.fit(X_train_res_scaled, y_res)
+plt.title('Comparison of Classification Model Accuracy')
+plt.xlabel('Model')
+plt.ylabel('Accuracy Score (%)')
+plt.ylim(min(accuracy_percent) - 5, 90)
 
-# Hasil terbaik
-print("Best parameters:", random_search.best_params_)
-print("Best CV score:", random_search.best_score_)
+# Menambahkan teks persen di atas batang
+for bar, score in zip(bars, accuracy_percent):
+    plt.text(bar.get_x() + bar.get_width()/2, score + 1, f'{score:.2f}%', ha='center', va='bottom')
 
-# Model terbaik
-best_rf = random_search.best_estimator_
+# Simpan gambar
+plt.savefig('model_accuracy_comparison.png', dpi=300, bbox_inches='tight')  # simpan sebagai PNG
+plt.show()
 
-y_pred = best_rf.predict(X_test_scaled)
-print(classification_report(y_test, y_pred))
-print(confusion_matrix(y_test, y_pred))
+"""Based on the model evaluation table, the **Random Forest model** is the best performer with the highest accuracy of **0.85**. It's the most balanced model, although all models—including Random Forest and XGBoost struggle significantly with predicting class 0. This is evident from the very low precision, recall, and f1-scores for that class. The **SVM and KNN models are the weakest**, with lower overall accuracy, and they also struggle with predictions, especially for classes 0 and 1. To improve the overall performance, it's crucial to address the poor prediction of class 0, possibly due to data imbalance.
+
+We will save the model using joblib
+"""
 
 # Misal rf_model sudah dilatih
 joblib.dump(models['Random Forest'], "rf_model.pkl")
 print("Model berhasil disimpan ke rf_model.pkl")
 
-"""## Hasil inference/labeling satu data"""
+"""## Inference on a Single Test
+To perform inference or labeling on a single piece of data, we use a trained model to make a prediction on a new, unseen data point. This process involves selecting one example from the test set, ensuring it is in the correct format, and then passing it to the model's .predict() method
+"""
 
-# Misal model sudah dilatih
-rf_model = models['Random Forest']
-rf_model.fit(X_res, y_res)
+print("--- Performing inference from the saved model ---")
 
-# Misal X_test punya kolom yang sama seperti X_res
-single_sample = X_test.iloc[0]  # ambil baris pertama
-single_sample_df = pd.DataFrame([single_sample], columns=X_res.columns)
+# 1. Load the best model from the .pkl file
+best_model = joblib.load("rf_model.pkl")
 
-# Prediksi
-pred_class = rf_model.predict(single_sample_df)[0]
-pred_prob = rf_model.predict_proba(single_sample_df)[0]
+# 2. Select a single data example from the scaled test set
+# We will use the first row of the test data as our example
+single_test_example = X_test_scaled[100]
 
-print(f"Predicted class: {pred_class}")
-print(f"Predicted probability: {pred_prob}")
+# 3. Reshape the data for the model
+# The .predict() method expects a 2D array, so we reshape the single row
+single_test_example = single_test_example.reshape(1, -1)
+
+# 4. Make a prediction (labeling)
+prediction_numeric = best_model.predict(single_test_example)
+
+# 5. Get the actual label for comparison
+actual_label_numeric = y_test.iloc[0]
+
+# 6. Convert numeric labels to their descriptive names
+prediction_label = label_map[prediction_numeric[0]]
+actual_label = label_map[actual_label_numeric]
+
+# 7. Print the results
+print(f"The model predicted the label as: {prediction_label}")
+print(f"The actual label for this data point is: {actual_label}")

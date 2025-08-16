@@ -13,19 +13,23 @@ Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). Modeling wi
 ----
 
 ### Business Understanding
+Menilai kualitas wine secara cepat dan akurat membantu produsen mempercepat distribusi produk berkualitas tinggi, meningkatkan penjualan, dan menjaga reputasi merek.
+Bagi konsumen, hal ini memastikan kualitas yang konsisten dan memuaskan.
+Dengan machine learning, penilaian dapat dilakukan secara objektif dan efisien hanya berdasarkan data fisikokimia wine, tanpa bergantung pada penilaian manual yang subjektif.
 ##### Problem Statements
 1. Apakah terdapat hubungan signifikan antara parameter fisikokimia wine (misalnya fixed acidity, volatile acidity, citric acid, alkohol) dan kualitas wine?
 2. Bagaimana cara memprediksi kualitas red wine secara akurat hanya dengan menggunakan data kimiawi?
 3. Algoritma klasifikasi mana yang memberikan performa terbaik untuk prediksi kualitas wine?
 
 ##### Goals
-1. Mengidentifikasi fitur-fitur kimia yang memiliki pengaruh signifikan terhadap kualitas wine.
-2. Membangun model klasifikasi yang dapat memprediksi kualitas wine dengan tingkat akurasi yang tinggi.
-3.Membandingkan beberapa algoritma untuk menemukan model dengan performa terbaik.
+1. Menemukan fitur kimia yang paling berpengaruh terhadap kualitas wine.
+2. Mengembangkan model prediksi kualitas wine berbasis data fisikokimia dengan akurasi tinggi.
+3. Membandingkan beberapa algoritma klasifikasi untuk menentukan model dengan performa terbaik. 
 
 ##### Solution Statement
-1. Menggunakan beberapa algoritma klasifikasi seperti Logistic Regression, Random Forest, XGBoost, SVM, dan KNN untuk membangun model prediksi.
-2. Melakukan hyperparameter tuning untuk meningkatkan performa model terbaik berdasarkan metrik evaluasi seperti akurasi, precision, recall, dan F1-score.
+1. Melakukan analisis korelasi dan uji statistik untuk mengidentifikasi fitur kimia yang berpengaruh signifikan terhadap kualitas wine.
+2. Membangun dan melatih model klasifikasi menggunakan algoritma seperti Random Forest, XGBoost, SVM, dan KNN.
+3. Membandingkan hasil akurasi dari 4 model yang di latih
 
 ---
 
@@ -33,7 +37,7 @@ Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). Modeling wi
 
 Dataset yang digunakan dalam proyek ini adalah **Wine Quality Dataset** yang tersedia di Kaggle, bersumber dari *UCI Machine Learning Repository*. Dataset ini dapat diakses melalui tautan berikut: [https://www.kaggle.com/datasets/yasserh/wine-quality-dataset/data](https://www.kaggle.com/datasets/yasserh/wine-quality-dataset/data).
 
-Dataset ini berisi 12 fitur fisikokimia, dengan `quality` sebagai variabel target yang telah diubah menjadi dua kelas: `0` (low) dan `1` (high).
+Dataset ini berisi 12 fitur fisikokimia, dengan `quality` sebagai variabel target yang berisi nilai mulai dari 3 - 8, Dataset ini berisi 1143 data 
 
 Berikut adalah daftar fitur pada dataset:
 
@@ -51,6 +55,21 @@ Berikut adalah daftar fitur pada dataset:
   * `quality`: Kualitas *wine* yang telah diklasifikasikan menjadi low (0) atau high (1).
 
 ---
+### Data Visualization 
+
+##### Univariate Histogram
+<img src="data/univariate_histogram.png" alt="1. Univatiate Histogram" width="200">
+
+Based on the histogram results above:
+- Many features are right-skewed: Features such as residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, and alcohol have a long tail to the right. This indicates there are some very high values (outliers). In the KDE plot, the curve would appear stretched to the right.
+- Some features are normally distributed: Features such as volatile acidity, density, and pH have a more symmetrical distribution, resembling a bell curve. The KDE plot for these features would resemble a bell shape.
+- Categorical feature: The quality feature has values concentrated at 5, 6, and 7. For this type of feature, a histogram is more appropriate than KDE.
+- Unique identifier: The Id feature is not useful for analysis because each value is unique.
+
+<img src="data/univariate_boxplot.png" alt="1. Univatiate Histogram" width="200">
+
+From the boxplot results, all features have outliers, as indicated by the points outside the whiskers. Some features, such as** residual sugar, chlorides, free sulfur dioxide, and total sulfur dioxide**, have a large number of outliers, while features such as** alcohol, sulphates, fixed acidity, volatile acidity, density, citric acid, pH, and quality** have fewer outliers. This should be taken into consideration during preprocessing to reduce the negative impact of outliers on the model.
+
 
 ### Data Preparation
 Pada tahap ini, beberapa teknik persiapan data dilakukan untuk memastikan data siap digunakan dalam pemodelan:
