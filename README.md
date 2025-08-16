@@ -91,7 +91,7 @@ Pada tahap ini, beberapa teknik persiapan data dilakukan untuk memastikan data s
 -----
 
 ### Modeling
-Pada tahap ini, lima model klasifikasi *machine learning* diterapkan untuk menyelesaikan masalah yang telah didefinisikan. Alasan pemilihan keempat model ini karena masing-masing punya keunggulan yang berbeda, sehingga bisa dibandingkan performanya dan dipilih yang paling sesuai untuk dataset wine:
+Pada tahap ini, 4 model klasifikasi *machine learning* diterapkan untuk menyelesaikan masalah yang telah didefinisikan. Alasan pemilihan keempat model ini karena masing-masing punya keunggulan yang berbeda, sehingga bisa dibandingkan performanya dan dipilih yang paling sesuai untuk dataset wine:
 
 1. `Random Forest` : Model *ensemble* berbasis pohon keputusan yang membangun banyak pohon secara paralel.
   - Mudah digunakan dan tahan terhadap overfitting.
