@@ -177,6 +177,7 @@ Algoritma `Random Forest` yang performanya baik yaitu sekitar **85%**
 ----
 
 ### Saran 
-1. Eksplorasi Lanjutan: Pertimbangkan untuk mencoba model boosting seperti XGBoost dengan tuning yang lebih dalam dan eksplorasi feature engineering.
-2. Implementasi: Setelah model final didapat, model tersebut dapat di-deploy untuk membantu produsen wine dalam mengontrol kualitas produk secara otomatis.
+1. **Penanganan Kelas Minoritas**: Terapkan teknik resampling seperti SMOTE, ADASYN, atau class weighting untuk menangani ketidakseimbangan kelas sehingga model lebih akurat dalam memprediksi kualitas wine yang jarang.
+2. **Eksplorasi Model & Feature Engineering**: Coba model boosting seperti Random Forest atau model lainnya dengan hyperparameter tuning lebih dalam dan eksplorasi fitur tambahan atau transformasi fitur agar kelas minoritas lebih mudah dikenali.
+3. **Implementasi**: Setelah model final didapat, deploy untuk membantu produsen wine dalam mengontrol kualitas, termasuk kualitas langka atau premium, secara otomatis.
 
