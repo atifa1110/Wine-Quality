@@ -133,10 +133,6 @@ Score: 0.8472
       Medium       0.93      0.88      0.90       189
         High       0.64      0.84      0.73        32
 
-    accuracy                           0.85       229
-   macro avg       0.56      0.62      0.58       229
-weighted avg       0.86      0.85      0.85       229
-
 ==== XGBoost =====
 Score: 0.8384
 
@@ -145,10 +141,6 @@ Score: 0.8384
          Low       0.10      0.12      0.11         8
       Medium       0.92      0.88      0.90       189
         High       0.64      0.78      0.70        32
-
-    accuracy                           0.84       229
-   macro avg       0.55      0.59      0.57       229
-weighted avg       0.85      0.84      0.84       229
 
 ===== SVM =====
 Score: 0.7598
@@ -159,10 +151,6 @@ Score: 0.7598
       Medium       0.92      0.78      0.84       189
         High       0.58      0.81      0.68        32
 
-    accuracy                           0.76       229
-   macro avg       0.51      0.57      0.53       229
-weighted avg       0.84      0.76      0.79       229
-
 ===== KNN =====
 Score: 0.6943
 
@@ -171,10 +159,6 @@ Score: 0.6943
          Low       0.06      0.25      0.09         8
       Medium       0.95      0.67      0.79       189
         High       0.51      0.94      0.66        32
-
-    accuracy                           0.69       229
-   macro avg       0.50      0.62      0.51       229
-weighted avg       0.86      0.69      0.74       229
 
 
 <img src="data/model_accuracy_comparison.png" alt="model_comparison" width="100%">
