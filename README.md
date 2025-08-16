@@ -57,33 +57,36 @@ Berikut adalah daftar fitur pada dataset:
 ---
 ### Data Visualization 
 
-##### Univariate Analysis
+#### Univariate Analysis
 <img src="data/univariate_histogram.png" alt="1. Univatiate Histogram" width="100%">
 
 Berdasarkan hasil histogram di atas, beberapa fitur seperti residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, dan alcohol miring ke kanan, menunjukkan adanya beberapa nilai yang sangat tinggi (outlier). Fitur seperti volatile acidity, density, dan pH memiliki distribusi yang lebih simetris seperti kurva lonceng. Fitur quality merupakan fitur kategorikal dengan nilai yang terpusat di 5, 6, dan 7, sehingga histogram lebih cocok untuk menampilkannya. Sedangkan fitur Id tidak berguna untuk analisis karena setiap nilainya unik.
 
 <img src="data/univariate_boxplot.png" alt="1. Univatiate Boxplot" width="100%">
 
-Berdasarkan hasil boxplot, semua fitur memiliki outlier yang terlihat dari titik-titik di luar whisker. Beberapa fitur seperti residual sugar, chlorides, free sulfur dioxide, dan total sulfur dioxide memiliki jumlah outlier yang banyak, sedangkan fitur seperti alcohol, sulphates, fixed acidity, volatile acidity, density, citric acid, pH, dan quality memiliki outlier lebih sedikit. Hal ini perlu diperhatikan saat preprocessing untuk mengurangi dampak negatif outlier terhadap model.
+Berdasarkan hasil boxplot, semua fitur memiliki outlier yang terlihat dari titik-titik di luar whisker. Beberapa fitur seperti **residual sugar, chlorides, free sulfur dioxide, dan total sulfur dioxide memiliki jumlah outlier yang banyak**, sedangkan fitur seperti **alcohol, sulphates, fixed acidity, volatile acidity, density, citric acid, pH, dan quality memiliki outlier lebih sedikit**. Hal ini perlu diperhatikan saat preprocessing untuk mengurangi dampak negatif outlier terhadap model.
 
-##### Multivariate Analysis
+#### Multivariate Analysis
 
 <img src="data/multivariate_matrix.png" alt="1. Multivariate Matrix" width="100%">
 
-Beberapa fitur menunjukkan hubungan kuat satu sama lain. Fixed acidity berkorelasi positif dengan citric acid dan density, sedangkan citric acid berkorelasi negatif dengan pH. Volatile acidity cenderung menurunkan citric acid dan kualitas wine. Free sulfur dioxide dan total sulfur dioxide saling berkorelasi tinggi. Alkohol memiliki korelasi positif dengan kualitas wine, artinya wine dengan alkohol lebih tinggi biasanya lebih baik. Secara umum, fitur seperti alkohol, fixed acidity, citric acid, dan sulfur dioxide penting untuk memprediksi kualitas wine, sementara fitur lain pengaruhnya lebih kecil.
+Beberapa fitur menunjukkan hubungan kuat satu sama lain. **Fixed acidity berkorelasi positif dengan citric acid dan density**, sedangkan **citric acid berkorelasi negatif dengan pH**. Volatile acidity cenderung menurunkan citric acid dan kualitas wine. Free sulfur dioxide dan total sulfur dioxide saling berkorelasi tinggi. Alkohol memiliki korelasi positif dengan kualitas wine, artinya wine dengan alkohol lebih tinggi biasanya lebih baik. Secara umum, fitur seperti alkohol, fixed acidity, citric acid, dan sulfur dioxide penting untuk memprediksi kualitas wine, sementara fitur lain pengaruhnya lebih kecil.
 
 <img src="data/multivariate_scatterplot.png" alt="1. Multivariate Scatterplot" width="100%">
 
-Berdasarkan scatter plot, beberapa fitur menunjukkan pengaruh terhadap kualitas wine. Alcohol, citric acid, dan sulphates memiliki hubungan positif, artinya semakin tinggi nilai fitur-fitur ini, semakin baik quality wine. Sebaliknya, volatile acidity dan density memiliki hubungan negatif, sehingga peningkatan keduanya cenderung menurunkan kualitas. Sementara itu, fitur seperti fixed acidity, residual sugar, chlorides, free dan total sulfur dioxide, serta pH tidak menunjukkan pola yang jelas, menandakan korelasinya dengan quality sangat lemah atau hampir tidak ada.
+Berdasarkan scatter plot, beberapa fitur menunjukkan pengaruh terhadap kualitas wine. **Alcohol, citric acid, dan sulphates memiliki hubungan positif**, artinya semakin tinggi nilai fitur-fitur ini, semakin baik quality wine. Sebaliknya, **volatile acidity dan density memiliki hubungan negatif**, sehingga peningkatan keduanya cenderung menurunkan kualitas. Sementara itu, fitur seperti **fixed acidity, residual sugar, chlorides, free dan total sulfur dioxide, serta pH tidak menunjukkan pola yang jelas**, menandakan korelasinya dengan quality sangat lemah atau hampir tidak ada.
 
 ### Data Preparation
 Pada tahap ini, beberapa teknik persiapan data dilakukan untuk memastikan data siap digunakan dalam pemodelan:
 
-1.  **Penanganan *Outlier***: Nilai-nilai ekstrem (`volatile acidity`, `residual sugar`, `chlorides`, `free sulfur dioxide`, `total sulfur dioxide`, dan `sulphates`) diatasi menggunakan teknik **Winsorizing**. Teknik ini mengganti nilai yang berada di luar batas tertentu (misalnya, persentil 5 dan 95) dengan nilai ambang batas tersebut.
-2.  **Penanganan Redundansi Fitur**: Dilakukan analisis korelasi antar fitur. Ditemukan korelasi yang sangat kuat antara `total sulfur dioxide_winsor` dan `free sulfur dioxide_winsor` ($r=0.69$). Untuk menghindari multikolinearitas dan menyederhanakan model, salah satu fitur (yaitu, `total sulfur dioxide_winsor`) dihapus. Meskipun `fixed acidity` dan `density` juga berkorelasi ($r=0.68$), keduanya dipertahankan karena uji coba menunjukkan penghapusan `density` justru menurunkan performa model.
-3.  **Pembagian Data**: Data dibagi menjadi data pelatihan (*training*) dan data pengujian (*testing*) dengan rasio 80:20 untuk membangun dan mengevaluasi model.
-4.  **Penanganan Ketidakseimbangan Kelas (*Imbalanced Data*)**: Karena distribusi kelas target (`low` dan `high`) tidak seimbang, teknik **SMOTE (*Synthetic Minority Over-sampling Technique*)** diterapkan pada data pelatihan. SMOTE menghasilkan sampel sintetis untuk kelas minoritas (`high`), sehingga jumlah sampel di setiap kelas menjadi seimbang.
-5.  **Standarisasi Fitur**: Menggunakan `RobustScaler` untuk menstandarisasi fitur-fitur numerik pada data. Proses ini penting untuk model yang sensitif terhadap skala fitur, seperti `Logistic Regression` dan `SVM`, sehingga semua fitur memiliki rentang nilai yang seragam.
+1. Copy Data : Menyimpan data ke variabel **clean_df** data agar nilai asli dan data yang mau dipakai modelling tidak tercampur.
+2. Menghilangkan nilai yang duplikat pada dataset. Tahapan ini diperlukan untuk mengurangi bias dan mencegah overfitting dari model.
+3.  **Penanganan *Outlier***: Nilai-nilai ekstrem (`volatile acidity`, `residual sugar`, `chlorides`, `free sulfur dioxide`, `total sulfur dioxide`, dan `sulphates`) diatasi menggunakan teknik **Winsorizing**. Teknik ini mengganti nilai yang berada di luar batas tertentu (misalnya, persentil 5 dan 95) dengan nilai ambang batas tersebut.
+4. **Konversi Data**: Melakukan konversi fitur quality dari rentang 0-10 menjadi data kategorikal yaitu low, medium, dan high, dan kemudian di encode kembali. Tahapan ini dilakukan karena tujuan dari proyek ini adalah melakukan klasifikasi multi-kelas dengan 3 kelas dan agar lebih mudah dalam menggeneralisasi kualitas red wine.
+5. Drop column Id karena data id unik sehingga tidak perlu dipakai saat modelling
+6.  **Pembagian Data**: Data dibagi menjadi data pelatihan (*training*) dan data pengujian (*testing*) dengan rasio 80:20 untuk membangun dan mengevaluasi model.
+7.  **Penanganan Ketidakseimbangan Kelas (*Imbalanced Data*)**: Karena distribusi kelas quality tidak seimbang dimana data 0: 9, 1: 945, dan 2:159, teknik **SMOTE (*Synthetic Minority Over-sampling Technique*)** diterapkan pada data pelatihan. SMOTE menghasilkan sampel sintetis untuk kelas minoritas, sehingga jumlah sampel di setiap kelas menjadi seimbang.
+8.  **Standarisasi Fitur**: Menggunakan `RobustScaler` untuk menstandarisasi fitur-fitur numerik pada data. Proses ini penting untuk model yang sensitif terhadap skala fitur, seperti `KNN` dan `SVM`, sehingga semua fitur memiliki rentang nilai yang seragam.
 
 -----
 
