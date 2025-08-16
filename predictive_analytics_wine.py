@@ -87,7 +87,7 @@ df.duplicated().sum()
 num_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
 """## Data Visualization & EDA
-uses univariate and multivariate visualizations to understand data distribution, detect outliers, and reveal relationships between features before modeling.
+After check dataset we will visualize using univariate and multivariate visualizations to understand data distribution, detect outliers, and reveal relationships between features before modeling.
 
 ### Univariate Analysis
 Univariate analysis is focusing on one variable at a time. The main goal is to describe, summarize, and find patterns in the data. At this stage, the data will be shown using a **histogram** to visualize the distribution and a **boxplot** to identify potential outliers and understand the spread of the data.
@@ -110,11 +110,15 @@ plt.tight_layout()
 plt.savefig('univariate_histogram.png', dpi=300, bbox_inches='tight')
 plt.show()
 
-"""Berdasarkan hasil histogram diatas :
-- Banyak fitur miring ke kanan (skewed): Fitur seperti **residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, dan alcoho**l memiliki ekor panjang ke kanan. Ini menunjukkan **ada beberapa nilai yang sangat tinggi (outlier)**. Dalam plot KDE, kurvanya akan terlihat memanjang ke kanan.
-- Beberapa fitur normal: Fitur volatile acidity, density, dan pH memiliki sebaran yang lebih simetris, mirip kurva lonceng. Plot KDE untuk fitur ini akan menyerupai bentuk lonceng.
-- Fitur kategorikal: Fitur quality memiliki nilai yang terpusat di 5, 6, dan 7. Untuk fitur seperti ini, histogram lebih cocok daripada KDE.
-- Identitas unik: Fitur Id bukan data yang berguna untuk analisis karena setiap nilainya unik.
+"""Based on the histogram results above:
+
+- Many features are right-skewed: Features such as residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, and alcohol have a long tail to the right. This indicates there are some very high values (outliers). In the KDE plot, the curve would appear stretched to the right.
+
+- Some features are normally distributed: Features such as volatile acidity, density, and pH have a more symmetrical distribution, resembling a bell curve. The KDE plot for these features would resemble a bell shape.
+
+- Categorical feature: The quality feature has values concentrated at 5, 6, and 7. For this type of feature, a histogram is more appropriate than KDE.
+
+- Unique identifier: The Id feature is not useful for analysis because each value is unique.
 """
 
 # Tentukan layout grid otomatis
@@ -137,7 +141,7 @@ plt.tight_layout()
 plt.savefig('univariate_boxplot.png', dpi=300, bbox_inches='tight')
 plt.show()
 
-"""Dari hasil boxplot, seluruh fitur memiliki outlier yang terlihat dari titik-titik di luar whisker. Beberapa fitur seperti **residual sugar, chlorides, free sulfur dioxide, dan total sulfur dioxide** memiliki jumlah outlier yang banyak, sedangkan fitur seperti **alcohol, sulphates, fixed acidity, volatile acidity, density, serta citric acid, pH, dan quality** memiliki outlier lebih sedikit. Hal ini perlu dipertimbangkan saat preprocessing untuk mengurangi dampak negatif outlier terhadap model.
+"""From the boxplot results, all features have outliers, as indicated by the points outside the whiskers. Some features, such as** residual sugar, chlorides, free sulfur dioxide, and total sulfur dioxide**, have a large number of outliers, while features such as** alcohol, sulphates, fixed acidity, volatile acidity, density, citric acid, pH, and quality** have fewer outliers. This should be taken into consideration during preprocessing to reduce the negative impact of outliers on the model.
 
 ### Multivariate Analysis
 Multivariate analysis examines the relationships between three or more variables simultaneously. At this stage, the data will be shown using a **heatmap** to visualize the correlation matrix and a **scatterplot** to show the distribution of multiple features with respect to the target variable quality.
@@ -159,41 +163,7 @@ plt.tight_layout()
 plt.savefig('multivariate_matrix.png', dpi=300, bbox_inches='tight')
 plt.show()
 
-"""Dari hasil heatmap diatas ditemukan ada beberapa fitur yang memiliki korelasi yang cukup tinggi > 0.60 :
-1. fixed acidity ↔ citric acid → **0.67**
-2. fixed acidity ↔ density → **0.68**
-3. free sulfur dioxide ↔ total sulfur dioxide → **0.66**
-
-Cek korelasi ke target (quality) dan lihat fitur mana di setiap pasangan yang punya korelasi absolut lebih besar dengan target → itu yang dipertahankan.
-
-1. fixed acidity → 0.12
-2. citric acid → 0.24 ✅ (lebih kuat ke target)
-density → -0.18
-4. free sulfur dioxide → -0.06
-5. total sulfur dioxide → -0.18 ✅ (lebih kuat ke target, walau negatif)
-
-**Rekomendasi awal (berdasarkan korelasi ke target saja)**
-
-**fixed acidity ↔ citric acid** →
-- Dari segi ilmu oenologi (ilmu wine), citric acid
-sering lebih berpengaruh ke kualitas persepsi rasa karena memberi freshness dan aroma citrus yang positif.
-- Fixed acidity memang penting, tapi terlalu tinggi bisa membuat wine terlalu asam dan tidak enak.
-- Korelasi ke quality (data kamu sebelum winsor): citric acid (0.24) > fixed acidity (0.12).
-- **Rekomendasi: Pilih citric acid.**
-
-
-**fixed acidity ↔ density** →
-- Density banyak dipengaruhi gula & alkohol.
-- Dalam penilaian kualitas, alkohol dan gula berperan besar pada body dan balance, jadi density bisa jadi indikator yang baik.
-- Korelasi ke quality: density (-0.18) sedikit lebih besar absolutnya daripada fixed acidity (0.12), tapi negatif → artinya density tinggi sering muncul di wine yang kualitasnya lebih rendah (misalnya wine manis dengan gula sisa tinggi).
-- **Rekomendasi: Pilih density**
-
-**free sulfur dioxide ↔ total sulfur dioxide** →
-- SO₂ memengaruhi stabilitas dan umur simpan, tapi kadar yang terlalu tinggi bisa merusak aroma & rasa.
-- Free SO₂ lebih berpengaruh langsung terhadap rasa dan aroma saat ini dibanding total SO₂.
-- Korelasi ke quality: total SO₂ (-0.18) > free SO₂ (-0.06) secara absolut, tapi arah negatif menunjukkan kadar tinggi sering menurunkan kualitas.
-- **Rekomendasi: Pilih total sulfur dioxide**
-"""
+"""Dari matriks korelasi numerik yang ditampilkan, terlihat bahwa beberapa fitur memiliki hubungan yang cukup kuat satu sama lain. Misalnya, fixed acidity memiliki korelasi positif tinggi dengan **citric acid (0.67) dan density (0.68)**, sedangkan **citric acid** juga memiliki korelasi negatif **dengan pH (-0.55)**. **Volatile acidity** menunjukkan korelasi negatif cukup signifikan dengan **citric acid (-0.54) dan dengan quality (-0.41)**, menunjukkan bahwa peningkatan volatile acidity cenderung menurunkan kualitas wine.** Free sulfur dioxide dan total sulfur dioxide** memiliki korelasi positif tinggi **(0.66)**, yang wajar karena keduanya terkait dengan kandungan sulfur. Selain itu, alcohol memiliki korelasi positif moderat dengan quality (0.48), menandakan bahwa wine dengan kadar alkohol lebih tinggi cenderung memiliki kualitas lebih baik. Secara keseluruhan, korelasi ini menunjukkan bahwa fitur-fitur seperti **alkohol, fixed acidity, citric acid, dan sulfur dioxide dapat menjadi indikator penting dalam memprediksi kualitas wine**, sementara beberapa fitur lainnya memiliki pengaruh yang lebih lemah atau netral."""
 
 # Asumsi target = 'quality'
 target = 'quality'
@@ -454,7 +424,7 @@ print("--- Performing inference from the saved model ---")
 best_model = joblib.load("rf_model.pkl")
 
 # 2. Select a single data example from the scaled test set
-# We will use the first row of the test data as our example
+# We will use random data of the test data as our example
 single_test_example = X_test_scaled[100]
 
 # 3. Reshape the data for the model
