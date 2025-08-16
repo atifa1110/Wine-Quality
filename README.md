@@ -79,11 +79,11 @@ Berdasarkan scatter plot, beberapa fitur menunjukkan pengaruh terhadap kualitas 
 ### Data Preparation
 Pada tahap ini, beberapa teknik persiapan data dilakukan untuk memastikan data siap digunakan dalam pemodelan:
 
-1. Copy Data : Menyimpan data ke variabel **clean_df** data agar nilai asli dan data yang mau dipakai modelling tidak tercampur.
+1. **Copy Data** : Menyimpan data ke variabel **clean_df** data agar nilai asli dan data yang mau dipakai modelling tidak tercampur.
 2. Menghilangkan nilai yang duplikat pada dataset. Tahapan ini diperlukan untuk mengurangi bias dan mencegah overfitting dari model.
 3.  **Penanganan *Outlier***: Nilai-nilai ekstrem (`volatile acidity`, `residual sugar`, `chlorides`, `free sulfur dioxide`, `total sulfur dioxide`, dan `sulphates`) diatasi menggunakan teknik **Winsorizing**. Teknik ini mengganti nilai yang berada di luar batas tertentu (misalnya, persentil 5 dan 95) dengan nilai ambang batas tersebut.
-4. **Konversi Data**: Melakukan konversi fitur quality dari rentang 0-10 menjadi data kategorikal yaitu low, medium, dan high, dan kemudian di encode kembali. Tahapan ini dilakukan karena tujuan dari proyek ini adalah melakukan klasifikasi multi-kelas dengan 3 kelas dan agar lebih mudah dalam menggeneralisasi kualitas red wine.
-5. Drop column Id karena data id unik sehingga tidak perlu dipakai saat modelling
+4. **Konversi Data**: Melakukan konversi fitur quality dari rentang `0-10` menjadi data kategorikal yaitu `low`,`medium`, dan `high`, dan kemudian di encode kembali. Tahapan ini dilakukan karena tujuan dari proyek ini adalah melakukan **klasifikasi multi-kelas** dengan 3 kelas dan agar lebih mudah dalam menggeneralisasi kualitas red wine.
+5. Drop column `Id` karena data id unik sehingga tidak perlu dipakai saat modelling
 6.  **Pembagian Data**: Data dibagi menjadi data pelatihan (*training*) dan data pengujian (*testing*) dengan rasio 80:20 untuk membangun dan mengevaluasi model.
 7.  **Penanganan Ketidakseimbangan Kelas (*Imbalanced Data*)**: Karena distribusi kelas quality tidak seimbang dimana data 0: 9, 1: 945, dan 2:159, teknik **SMOTE (*Synthetic Minority Over-sampling Technique*)** diterapkan pada data pelatihan. SMOTE menghasilkan sampel sintetis untuk kelas minoritas, sehingga jumlah sampel di setiap kelas menjadi seimbang.
 8.  **Standarisasi Fitur**: Menggunakan `RobustScaler` untuk menstandarisasi fitur-fitur numerik pada data. Proses ini penting untuk model yang sensitif terhadap skala fitur, seperti `KNN` dan `SVM`, sehingga semua fitur memiliki rentang nilai yang seragam.
@@ -91,64 +91,101 @@ Pada tahap ini, beberapa teknik persiapan data dilakukan untuk memastikan data s
 -----
 
 ### Modeling
-Pada tahap ini, lima model klasifikasi *machine learning* diterapkan untuk menyelesaikan masalah yang telah didefinisikan.
+Pada tahap ini, lima model klasifikasi *machine learning* diterapkan untuk menyelesaikan masalah yang telah didefinisikan. Alasan pemilihan keempat model ini karena masing-masing punya keunggulan yang berbeda, sehingga bisa dibandingkan performanya dan dipilih yang paling sesuai untuk dataset wine:
 
-**Model yang Digunakan:**
+1. `Random Forest` : Model *ensemble* berbasis pohon keputusan yang membangun banyak pohon secara paralel.
+  - Mudah digunakan dan tahan terhadap overfitting.
+  - Bagus untuk data dengan banyak fitur numerik dan bisa menilai feature importance.
+  - Memberikan baseline yang kuat untuk masalah klasifikasi.
+2. `XGBoost`: Model *ensemble* yang membangun pohon keputusan secara sekuensial dengan setiap pohon baru berusaha memperbaiki kesalahan dari pohon sebelumnya.
+  - Sering menghasilkan performa tinggi karena fokus memperbaiki kesalahan model sebelumnya.
+  - Cocok untuk dataset yang kompleks atau memiliki interaksi antar fitur.
+  - XGBoost lebih cepat dan efisien dibanding Gradient Boosting biasa, dengan regularisasi untuk mengurangi overfitting.
+3. `SVM` (Support Vector Machine) : Model yang mencari *hyperplane* optimal untuk memisahkan kelas.
+  - Efektif untuk dataset berdimensi tinggi.
+  - Dapat memisahkan kelas dengan baik, bahkan jika hubungan antar fitur non-linear (dengan kernel trick).
+  - Memberikan pendekatan yang berbeda dibanding pohon keputusan (tree-based).
+4. `KNN` (K-Nearest Neighbors) : Model non-parametrik yang mengklasifikasikan data berdasarkan mayoritas kelas dari tetangga terdekatnya.
+  - Model sederhana dan intuitif, berbasis jarak antar data.
+  - Berguna sebagai perbandingan dengan model yang lebih kompleks.
+  - Tidak membuat asumsi distribusi data sehingga bisa menangani pola yang berbeda.
 
-  * `Logistic Regression`: Model linier dasar untuk klasifikasi.
-  * `Random Forest`: Model *ensemble* berbasis pohon keputusan yang membangun banyak pohon secara paralel.
-  * `XGBoost` & `Gradient Boosting`: Model *ensemble* yang membangun pohon keputusan secara sekuensial, dengan setiap pohon baru berusaha memperbaiki kesalahan dari pohon sebelumnya.
-  * `SVM` (Support Vector Machine): Model yang mencari *hyperplane* optimal untuk memisahkan kelas.
-  * `KNN` (K-Nearest Neighbors): Model non-parametrik yang mengklasifikasikan data berdasarkan mayoritas kelas dari tetangga terdekatnya.
-
-Berdasarkan perbandingan awal, **Random Forest** menunjukkan performa terbaik. Oleh karena itu, Random Forest dipilih sebagai model utama untuk dioptimalkan melalui *hyperparameter tuning*.
-
-**Proses *Improvement*:**
-`Hyperparameter tuning` pada **Random Forest** dilakukan untuk menemukan kombinasi parameter terbaik yang dapat meningkatkan performa model. Parameter yang akan dioptimalkan antara lain:
-
-  * `n_estimators`: Jumlah pohon dalam *forest*.
-  * `max_depth`: Kedalaman maksimum setiap pohon.
-  * `max_features`: Jumlah fitur yang dipertimbangkan untuk setiap *split*.
-
+Dengan membandingkan performa mereka, kita bisa menentukan model terbaik untuk prediksi kualitas wine.
+  
 -----
 
 ### Evaluation
-
-Metrik evaluasi yang digunakan untuk mengukur performa model adalah **Akurasi, Precision, Recall,** dan **F1-Score**.
+Metrik evaluasi yang dihitung untuk setiap model meliputi Akurasi, Precision, Recall, dan F1-Score. Namun, untuk tujuan perbandingan performa antar model, fokus utama adalah nilai akurasi. Dengan membandingkan akurasi, kita dapat menentukan model mana yang paling efektif dalam memprediksi kualitas wine, meskipun metrik lain tetap tersedia sebagai informasi tambahan
 
   * **Akurasi**: Persentase prediksi yang benar dari total prediksi.
   * **Precision**: Kemampuan model untuk tidak mengklasifikasikan sampel negatif sebagai positif.
   * **Recall**: Kemampuan model untuk menemukan semua sampel positif.
   * **F1-Score**: Rata-rata harmonik dari *precision* dan *recall*, memberikan keseimbangan antara keduanya.
 
-**Hasil Proyek Berdasarkan Metrik Evaluasi:**
+**Hasil Proyek Berdasarkan Metrik Evaluasi Akurasi:**
 
-Berdasarkan hasil perbandingan model awal, `Random Forest` menunjukkan hasil terbaik dengan **skor akurasi sebesar 0.7991 (sekitar 80%)**.
-
-Berikut adalah hasil evaluasi dari model `Random Forest`:
-
-```
 ===== Random Forest =====
-Score: 0.7991
+Score: 0.8472
               precision    recall  f1-score   support
 
-           0       0.82      0.80      0.81       124
-           1       0.77      0.80      0.79       105
+         Low       0.11      0.12      0.12         8
+      Medium       0.93      0.88      0.90       189
+        High       0.64      0.84      0.73        32
 
-    accuracy                           0.80       229
-   macro avg       0.80      0.80      0.80       229
-weighted avg       0.80      0.80      0.80       229
+    accuracy                           0.85       229
+   macro avg       0.56      0.62      0.58       229
+weighted avg       0.86      0.85      0.85       229
 
-[[99 25]
- [21 84]]
-```
+==== XGBoost =====
+Score: 0.8384
+              precision    recall  f1-score   support
 
-  * **Akurasi (0.80)**: Menunjukkan bahwa 80% dari total prediksi model adalah benar.
-  * **Precision & Recall**: Nilai *precision* dan *recall* yang seimbang antara kelas 0 dan 1 menunjukkan bahwa model tidak bias terhadap salah satu kelas.
-  * **F1-Score**: Nilai `F1-Score` yang tinggi untuk kedua kelas (0.81 dan 0.79) membuktikan bahwa model memiliki keseimbangan yang baik antara kemampuan memprediksi positif dengan benar dan menemukan semua positif.
+         Low       0.10      0.12      0.11         8
+      Medium       0.92      0.88      0.90       189
+        High       0.64      0.78      0.70        32
 
-**Kesimpulan**: Model **Random Forest** memberikan performa terbaik dalam memprediksi kualitas *wine* dengan akurasi 80%. Hasil ini membuktikan bahwa pendekatan *machine learning* dapat menjadi solusi yang efektif untuk mengklasifikasikan kualitas *wine* secara objektif.
+    accuracy                           0.84       229
+   macro avg       0.55      0.59      0.57       229
+weighted avg       0.85      0.84      0.84       229
 
+===== SVM =====
+Score: 0.7598
+              precision    recall  f1-score   support
+
+         Low       0.04      0.12      0.06         8
+      Medium       0.92      0.78      0.84       189
+        High       0.58      0.81      0.68        32
+
+    accuracy                           0.76       229
+   macro avg       0.51      0.57      0.53       229
+weighted avg       0.84      0.76      0.79       229
+
+===== KNN =====
+Score: 0.6943
+              precision    recall  f1-score   support
+
+         Low       0.06      0.25      0.09         8
+      Medium       0.95      0.67      0.79       189
+        High       0.51      0.94      0.66        32
+
+    accuracy                           0.69       229
+   macro avg       0.50      0.62      0.51       229
+weighted avg       0.86      0.69      0.74       229
+
+
+<img src="data/model_accuracy_comparison.png" alt="model_comparison" width="100%">
+
+Berdasarkan tabel evaluasi dan grafik akurasi, model **Random Forest** adalah yang paling baik dengan akurasi tertinggi sebesar **85%**. Model ini merupakan yang paling seimbang, meskipun semua model termasuk Random Forest dan XGBoost mengalami kesulitan signifikan dalam memprediksi kelas 0. Hal ini terlihat dari nilai precision, recall, dan F1-score yang sangat rendah untuk kelas tersebut. Model SVM dan KNN adalah yang paling lemah, dengan akurasi keseluruhan lebih rendah, dan juga mengalami kesulitan dalam prediksi, terutama untuk kelas 0 dan 1. Untuk meningkatkan performa secara keseluruhan, penting untuk menangani prediksi yang buruk pada kelas 0, kemungkinan disebabkan oleh ketidakseimbangan data.
+
+**Kesimpulan**: Dengan ini kita bisa menjawab pertanyaan problem state yang ada di atas dimana 
+1. Apakah terdapat hubungan signifikan antara parameter fisikokimia wine (misalnya fixed acidity, volatile acidity, citric acid, alkohol) dan kualitas wine?
+Ya, terutama pada fitur seperti `alkohol`, `fixed acidity`, `citric acid`, dan `sulfur dioxide` penting untuk memprediksi kualitas wine, sementara fitur lain pengaruhnya lebih kecil.
+
+2. Bagaimana cara memprediksi kualitas red wine secara akurat hanya dengan menggunakan data kimiawi?
+Dengan melakukan proses data serta modelling dengan 4 model yang sudah disebutkan diatas dan melakukan evaluasi
+
+3. Algoritma klasifikasi mana yang memberikan performa terbaik untuk prediksi kualitas wine?
+Algoritma `Random Forest` yang performanya baik yaitu sekitar **85%**
 ----
 
 ### Saran 
