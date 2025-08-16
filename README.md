@@ -57,19 +57,24 @@ Berikut adalah daftar fitur pada dataset:
 ---
 ### Data Visualization 
 
-##### Univariate Histogram
-<img src="data/univariate_histogram.png" alt="1. Univatiate Histogram" width="200">
+##### Univariate Analysis
+<img src="data/univariate_histogram.png" alt="1. Univatiate Histogram" width="100%">
 
-Based on the histogram results above:
-- Many features are right-skewed: Features such as residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, and alcohol have a long tail to the right. This indicates there are some very high values (outliers). In the KDE plot, the curve would appear stretched to the right.
-- Some features are normally distributed: Features such as volatile acidity, density, and pH have a more symmetrical distribution, resembling a bell curve. The KDE plot for these features would resemble a bell shape.
-- Categorical feature: The quality feature has values concentrated at 5, 6, and 7. For this type of feature, a histogram is more appropriate than KDE.
-- Unique identifier: The Id feature is not useful for analysis because each value is unique.
+Berdasarkan hasil histogram di atas, beberapa fitur seperti residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, dan alcohol miring ke kanan, menunjukkan adanya beberapa nilai yang sangat tinggi (outlier). Fitur seperti volatile acidity, density, dan pH memiliki distribusi yang lebih simetris seperti kurva lonceng. Fitur quality merupakan fitur kategorikal dengan nilai yang terpusat di 5, 6, dan 7, sehingga histogram lebih cocok untuk menampilkannya. Sedangkan fitur Id tidak berguna untuk analisis karena setiap nilainya unik.
 
-<img src="data/univariate_boxplot.png" alt="1. Univatiate Histogram" width="200">
+<img src="data/univariate_boxplot.png" alt="1. Univatiate Boxplot" width="100%">
 
-From the boxplot results, all features have outliers, as indicated by the points outside the whiskers. Some features, such as** residual sugar, chlorides, free sulfur dioxide, and total sulfur dioxide**, have a large number of outliers, while features such as** alcohol, sulphates, fixed acidity, volatile acidity, density, citric acid, pH, and quality** have fewer outliers. This should be taken into consideration during preprocessing to reduce the negative impact of outliers on the model.
+Berdasarkan hasil boxplot, semua fitur memiliki outlier yang terlihat dari titik-titik di luar whisker. Beberapa fitur seperti residual sugar, chlorides, free sulfur dioxide, dan total sulfur dioxide memiliki jumlah outlier yang banyak, sedangkan fitur seperti alcohol, sulphates, fixed acidity, volatile acidity, density, citric acid, pH, dan quality memiliki outlier lebih sedikit. Hal ini perlu diperhatikan saat preprocessing untuk mengurangi dampak negatif outlier terhadap model.
 
+##### Multivariate Analysis
+
+<img src="data/multivariate_matrix.png" alt="1. Multivariate Matrix" width="100%">
+
+Beberapa fitur menunjukkan hubungan kuat satu sama lain. Fixed acidity berkorelasi positif dengan citric acid dan density, sedangkan citric acid berkorelasi negatif dengan pH. Volatile acidity cenderung menurunkan citric acid dan kualitas wine. Free sulfur dioxide dan total sulfur dioxide saling berkorelasi tinggi. Alkohol memiliki korelasi positif dengan kualitas wine, artinya wine dengan alkohol lebih tinggi biasanya lebih baik. Secara umum, fitur seperti alkohol, fixed acidity, citric acid, dan sulfur dioxide penting untuk memprediksi kualitas wine, sementara fitur lain pengaruhnya lebih kecil.
+
+<img src="data/multivariate_scatterplot.png" alt="1. Multivariate Scatterplot" width="100%">
+
+Berdasarkan scatter plot, beberapa fitur menunjukkan pengaruh terhadap kualitas wine. Alcohol, citric acid, dan sulphates memiliki hubungan positif, artinya semakin tinggi nilai fitur-fitur ini, semakin baik quality wine. Sebaliknya, volatile acidity dan density memiliki hubungan negatif, sehingga peningkatan keduanya cenderung menurunkan kualitas. Sementara itu, fitur seperti fixed acidity, residual sugar, chlorides, free dan total sulfur dioxide, serta pH tidak menunjukkan pola yang jelas, menandakan korelasinya dengan quality sangat lemah atau hampir tidak ada.
 
 ### Data Preparation
 Pada tahap ini, beberapa teknik persiapan data dilakukan untuk memastikan data siap digunakan dalam pemodelan:
