@@ -126,6 +126,7 @@ Metrik evaluasi yang dihitung untuk setiap model meliputi Akurasi, Precision, Re
 
 ===== Random Forest =====
 Score: 0.8472
+
               precision    recall  f1-score   support
 
          Low       0.11      0.12      0.12         8
@@ -138,6 +139,7 @@ weighted avg       0.86      0.85      0.85       229
 
 ==== XGBoost =====
 Score: 0.8384
+
               precision    recall  f1-score   support
 
          Low       0.10      0.12      0.11         8
@@ -150,6 +152,7 @@ weighted avg       0.85      0.84      0.84       229
 
 ===== SVM =====
 Score: 0.7598
+
               precision    recall  f1-score   support
 
          Low       0.04      0.12      0.06         8
@@ -162,6 +165,7 @@ weighted avg       0.84      0.76      0.79       229
 
 ===== KNN =====
 Score: 0.6943
+
               precision    recall  f1-score   support
 
          Low       0.06      0.25      0.09         8
