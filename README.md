@@ -37,7 +37,7 @@ Dengan machine learning, penilaian dapat dilakukan secara objektif dan efisien h
 
 Dataset yang digunakan dalam proyek ini adalah **Wine Quality Dataset** yang tersedia di Kaggle, bersumber dari *UCI Machine Learning Repository*. Dataset ini dapat diakses melalui tautan berikut: [https://www.kaggle.com/datasets/yasserh/wine-quality-dataset/data](https://www.kaggle.com/datasets/yasserh/wine-quality-dataset/data).
 
-Dataset ini berisi 12 fitur fisikokimia, dengan `quality` sebagai variabel target yang berisi nilai mulai dari 3 - 8, Dataset ini berisi 1143 data 
+Dataset terdiri dari 1.143 baris dan 13 kolom yaitu 12 fitur dan 1 target berupa `quality` yang berisi nilai mulai dari 3 - 8,
 
 Berikut adalah daftar fitur pada dataset:
 
@@ -53,6 +53,14 @@ Berikut adalah daftar fitur pada dataset:
   * `sulphates`: Kalium sulfat (g/dm³), berperan sebagai pengawet.
   * `alcohol`: Kandungan alkohol dalam *wine* (%).
   * `quality`: Kualitas *wine* yang telah diklasifikasikan menjadi low (0) atau high (1).
+  * `Id` : Identifier unik untuk setiap baris data atau sampel wine
+
+Hasil pengecekan data menunjukkan:
+
+  * Missing value: Tidak ditemukan nilai yang hilang pada semua kolom.
+  * Duplikasi: Tidak ditemukan nilai yang duplikat pada semua kolom.
+  * Distribusi target: Sebagian besar wine tergolong pada kelas 5,6,dan 7 dan kelas lainnya tergolong sedikit sehingga dataset cenderung tidak seimbang.
+  * Outlier: Beberapa fitur, seperti residual sugar, chlorides, free sulfur dioxide, dan total sulfur dioxide, memiliki nilai ekstrem yang terlihat pada boxplot. Fitur lain relatif stabil dengan outlier lebih sedikit.
 
 ---
 ### Data Visualization 
@@ -93,22 +101,34 @@ Pada tahap ini, beberapa teknik persiapan data dilakukan untuk memastikan data s
 ### Modeling
 Pada tahap ini, 4 model klasifikasi *machine learning* diterapkan untuk menyelesaikan masalah yang telah didefinisikan. Alasan pemilihan keempat model ini karena masing-masing punya keunggulan yang berbeda, sehingga bisa dibandingkan performanya dan dipilih yang paling sesuai untuk dataset wine:
 
-1. `Random Forest` : Model *ensemble* berbasis pohon keputusan yang membangun banyak pohon secara paralel.
-  - Mudah digunakan dan tahan terhadap overfitting.
-  - Bagus untuk data dengan banyak fitur numerik dan bisa menilai feature importance.
-  - Memberikan baseline yang kuat untuk masalah klasifikasi.
-2. `XGBoost`: Model *ensemble* yang membangun pohon keputusan secara sekuensial dengan setiap pohon baru berusaha memperbaiki kesalahan dari pohon sebelumnya.
-  - Sering menghasilkan performa tinggi karena fokus memperbaiki kesalahan model sebelumnya.
-  - Cocok untuk dataset yang kompleks atau memiliki interaksi antar fitur.
-  - XGBoost lebih cepat dan efisien dibanding Gradient Boosting biasa, dengan regularisasi untuk mengurangi overfitting.
-3. `SVM` (Support Vector Machine) : Model yang mencari *hyperplane* optimal untuk memisahkan kelas.
-  - Efektif untuk dataset berdimensi tinggi.
-  - Dapat memisahkan kelas dengan baik, bahkan jika hubungan antar fitur non-linear (dengan kernel trick).
-  - Memberikan pendekatan yang berbeda dibanding pohon keputusan (tree-based).
-4. `KNN` (K-Nearest Neighbors) : Model non-parametrik yang mengklasifikasikan data berdasarkan mayoritas kelas dari tetangga terdekatnya.
-  - Model sederhana dan intuitif, berbasis jarak antar data.
-  - Berguna sebagai perbandingan dengan model yang lebih kompleks.
-  - Tidak membuat asumsi distribusi data sehingga bisa menangani pola yang berbeda.
+1. `Random Forest` 
+  - **Konsep**: Random Forest adalah model ensemble berbasis pohon keputusan yang membangun banyak pohon secara paralel. Setiap pohon dilatih pada subset data dan fitur yang berbeda. Prediksi akhir ditentukan oleh mayoritas suara dari semua pohon.
+  - **Keunggulan**: Model ini tahan terhadap overfitting, mudah digunakan, dan efektif untuk data dengan banyak fitur numerik. Model ini juga dapat mengukur pentingnya fitur (feature importance), memberikan wawasan tambahan tentang dataset.
+  - **Parameter yang Digunakan**: RandomForestClassifier(random_state=42, n_estimators=100)
+    * random_state=42: Menjamin hasil model yang sama setiap kali kode dijalankan (reprodusibilitas).
+    * n_estimators=100: Menentukan jumlah pohon keputusan yang akan dibangun. Semakin banyak pohon, model cenderung lebih stabil, meskipun waktu pelatihan bisa lebih lama.
+
+2. `XGBoost`
+  - **Konsep**: XGBoost (eXtreme Gradient Boosting) adalah model ensemble yang membangun pohon keputusan secara sekuensial. Setiap pohon baru dibuat untuk memperbaiki kesalahan prediksi dari pohon-pohon sebelumnya.
+  - **Keunggulan**: Dikenal karena performanya yang tinggi, XGBoost sangat efektif untuk dataset yang kompleks. Model ini juga lebih cepat dan efisien dibandingkan algoritma Gradient Boosting lainnya, dilengkapi dengan regularisasi untuk mengurangi overfitting.
+  - **Parameter yang Digunakan**: XGBClassifier(eval_metric='mlogloss', random_state=42)
+    * `eval_metric='mlogloss'`: Metrik evaluasi yang digunakan adalah multiclass log loss, yang mengukur performa model pada tugas klasifikasi multi-kelas.
+    * `random_state=42`: Digunakan untuk memastikan reprodusibilitas hasil.
+
+3. `SVM` (Support Vector Machine) 
+  - **Konsep**: SVM adalah model yang mencari hyperplane optimal—sebuah batas keputusan—untuk memisahkan kelas-kelas dalam dataset.
+  - **Keunggulan**: SVM sangat efektif pada dataset berdimensi tinggi. Dengan menggunakan kernel trick, model ini juga dapat memisahkan kelas dengan baik bahkan jika hubungan antar fitur bersifat non-linear, menawarkan pendekatan yang berbeda dari model berbasis pohon.
+  - **Parameter yang Digunakan**: SVC(C=1.0, kernel='rbf', gamma='scale')
+    * `C=1.0`: Parameter regularisasi yang mengontrol seberapa besar penalti untuk setiap kesalahan klasifikasi. Nilai C yang lebih besar akan membuat model lebih ketat menyesuaikan diri dengan data, berpotensi mengurangi kesalahan pelatihan.
+    * `kernel='rbf'`: Menggunakan fungsi kernel Radial Basis Function, yang memungkinkan model untuk memisahkan data secara non-linear.
+    * `gamma='scale'`: Mengontrol seberapa jauh pengaruh satu sampel data pelatihan terhadap batas keputusan. Nilai 'scale' dihitung secara otomatis berdasarkan jumlah fitur dan varians data.
+
+
+4. `KNN` (K-Nearest Neighbors) :
+  - **Konsep**: KNN adalah model non-parametrik yang mengklasifikasikan sampel data baru berdasarkan mayoritas kelas dari tetangga terdekatnya.
+  - **Keunggulan**: Model ini sederhana dan intuitif, bergantung pada jarak antar titik data. Karena tidak membuat asumsi tentang distribusi data, KNN dapat menangani berbagai pola yang berbeda. Model ini berguna sebagai titik acuan (baseline) untuk membandingkan performa dengan model yang lebih kompleks.
+  - **Parameter yang Digunakan**: KNeighborsClassifier(n_neighbors=5)
+    * `n_neighbors=5`: Menentukan jumlah tetangga terdekat yang akan dipertimbangkan untuk mengklasifikasikan sampel data.
 
 Dengan membandingkan performa mereka, kita bisa menentukan model terbaik untuk prediksi kualitas wine.
   
