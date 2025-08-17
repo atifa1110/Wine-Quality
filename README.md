@@ -1,5 +1,7 @@
 ### Laporan Proyek Machine Learning - Atifa Fiorenza
 
+![Image](https://github.com/user-attachments/assets/5a2c96aa-62ab-4336-9292-4e49941dd176)
+
 ### Domain Proyek
 Kualitas wine merupakan salah satu faktor penentu nilai jual dan daya saing produk di industri minuman beralkohol. Penilaian kualitas biasanya dilakukan melalui uji rasa (sensory evaluation) oleh panelis terlatih. Meski metode ini lazim digunakan, prosesnya memerlukan waktu, biaya, dan tetap memiliki unsur subjektivitas.
 
